@@ -44,6 +44,24 @@ def read_initial_data():
     assignments = []
     timetables = []
 
+
+
+    # Read from timetables file
+    with open("timetables_StudentID.txt", 'r') as file:
+        for line in file:
+            data = line.strip().split(",")
+            course_code, course_name, instructor, room_number, time_slots = data[0], data[1], data[2], data[3], data[4]
+            course = Course(course_code, course_name, instructor, room_number, time_slots)
+            courses.append(course)
+            timetables.append(Timetable(course, line.strip()))
+
+    # Read from assignments file
+    with open("assignments_StudentID.txt", 'r') as file:
+        for line in file:
+            data = line.strip().split(",")
+            assignment_id, course_code, student_id, submission_status = data[0], data[1], data[2], data[3]
+            assignments.append(Assignment(assignment_id, course_code, student_id, submission_status))
+            
     # Read from attendance file
     with open("attendance_StudentID.txt", 'r') as file:
         for line in file:
@@ -66,24 +84,8 @@ def read_initial_data():
             attendance = Attendance(student, course, date, time)
             attendances.append(attendance)
 
-    # Read from timetables file
-    with open("timetables_StudentID.txt", 'r') as file:
-        for line in file:
-            data = line.strip().split(",")
-            course_code, course_name, instructor, room_number, time_slots = data[0], data[1], data[2], data[3], data[4]
-            course = Course(course_code, course_name, instructor, room_number, time_slots)
-            courses.append(course)
-            timetables.append(Timetable(course, line.strip()))
-
-    # Read from assignments file
-    with open("assignments_StudentID.txt", 'r') as file:
-        for line in file:
-            data = line.strip().split(",")
-            assignment_id, course_code, student_id, submission_status = data[0], data[1], data[2], data[3]
-            assignments.append(Assignment(assignment_id, course_code, student_id, submission_status))
-
     return students, courses, attendances, assignments, timetables
-
+    
 
 def write_updated_data(students, courses, attendances, assignments, timetables):
     # Write updated attendance data to file
