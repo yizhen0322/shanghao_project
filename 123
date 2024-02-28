@@ -14,10 +14,11 @@ class Course:
         self.time_slots = time_slots
 
 class Attendance:
-    def __init__(self, student, course, attendance_time):
+    def __init__(self, student, course, date, time):
         self.student = student
         self.course = course
-        self.attendance_time = attendance_time
+        self.date = date
+        self.time = time
 
 class Assignment:
     def __init__(self, assignment_id, course, student, submission_status):
@@ -47,8 +48,23 @@ def read_initial_data():
     with open("attendance_StudentID.txt", 'r') as file:
         for line in file:
             data = line.strip().split(",")
-            student_id, name = data[0], data[1]
-            students.append(Student(student_id, name))
+            student_id, student_name, course_code, date, time = data
+            # Assuming the Student and Course objects are already initialized
+            # Find the corresponding Student and Course objects from existing data or create new ones if necessary
+            student = next((student for student in students if student.student_id == student_id), None)
+            if not student:
+                student = Student(student_id, student_name)
+                students.append(student)
+            course = next((course for course in courses if course.course_code == course_code), None)
+            if not course:
+                # Assuming the instructor and room number are not needed for attendance
+                # If needed, you can extract them from the file as well
+                course_name = "Unknown"  # Provide a default course name if not available
+                course = Course(course_code, course_name, None, None, None)
+                courses.append(course)
+            # Create Attendance object and append to attendances list
+            attendance = Attendance(student, course, date, time)
+            attendances.append(attendance)
 
     # Read from timetables file
     with open("timetables_StudentID.txt", 'r') as file:
@@ -73,7 +89,8 @@ def write_updated_data(students, courses, attendances, assignments, timetables):
     # Write updated attendance data to file
     with open("attendance_StudentID.txt", "w") as attendance_file:
         for record in attendances:
-            attendance_file.write(f"{record.student.student_id},{record.course.course_code},{record.attendance_time}\n")
+            attendance_file.write(f"{record.student.student_id},{record.student.name},{record.course.course_code},"
+                                  f"{record.date},{record.time}\n")
     
     # Write updated timetable data to file
     with open("timetables_StudentID.txt", "w") as timetable_file:
@@ -86,7 +103,6 @@ def write_updated_data(students, courses, attendances, assignments, timetables):
             assignment_file.write(f"{record.assignment_id},{record.course.course_code},{record.student},{record.submission_status}\n")
 
 def mark_attendance(students, courses, attendances):
-    # Prompt the user to select a course
     print("Available Courses:")
     for i, course in enumerate(courses, 1):
         print(f"{i}. {course.course_name} ({course.course_code})")
@@ -113,15 +129,13 @@ def mark_attendance(students, courses, attendances):
                 if attendance_status == 'present':
                     present_students.add(student)
 
-            # Calculate and display attendance percentages
-            total_classes = 10  # Example: Total number of classes
-            attendance_percentage = (len(present_students) / len(enrolled_students)) * 100
-            print(f"\nAttendance Percentage for {selected_course.course_name}: {attendance_percentage:.2f}%")
+            # Capture the date and time
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.datetime.now().strftime("%H:%M:%S")
 
             # Update the global attendance list
             for student in present_students:
-                attendance_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                attendance = Attendance(student, selected_course, attendance_time)
+                attendance = Attendance(student, selected_course, current_date, current_time)
                 attendances.append(attendance)
 
         else:
@@ -278,9 +292,9 @@ def display_data(attendances, timetables, assignments, students, courses):
     
     print("\nAssignment Submission Status:")
     for assignment in assignments:
-        student = next((s.name for s in students if s.student_id == assignment.student), None)
-        course_name = next((c.course_name for c in courses if c.course_code == assignment.course), None)
-        print(f"Assignment ID: {assignment.assignment_id}, Course: {course_name}, Student: {student}, Status: {assignment.submission_status}")
+        student_name = next((student.name for student in students if student.student_id == assignment.student), None)
+        course_name = next((course.course_name for course in courses if course.course_code == assignment.course), None)
+        print(f"Assignment ID: {assignment.assignment_id}, Course: {course_name}, Student: {student_name}, Status: {assignment.submission_status}")
 
 
 def exit_program(students, courses, attendances, assignments, timetables):
