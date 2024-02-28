@@ -105,45 +105,53 @@ def write_updated_data(students, courses, attendances, assignments, timetables):
             assignment_file.write(f"{record.assignment_id},{record.course.course_code},{record.student},{record.submission_status}\n")
 
 def mark_attendance(students, courses, attendances):
-    print("Available Courses:")
-    for i, course in enumerate(courses, 1):
-        print(f"{i}. {course.course_name} ({course.course_code})")
+    while True:  # Loop until a valid course number is entered
+        print("Available Courses:")
+        for i, course in enumerate(courses, 1):
+            print(f"{i}. {course.course_name} ({course.course_code})")
 
-    course_choice = input("Enter the course number to mark attendance: ")
-    try:
-        course_choice = int(course_choice)
-        if 1 <= course_choice <= len(courses):
-            selected_course = courses[course_choice - 1]
-            print(f"\nMarking attendance for course: {selected_course.course_name} ({selected_course.course_code})")
+        course_choice = input("Enter the course number to mark attendance: ")
+        try:
+            course_choice = int(course_choice)
+            if 1 <= course_choice <= len(courses):
+                selected_course = courses[course_choice - 1]
+                print(f"\nMarking attendance for course: {selected_course.course_name} ({selected_course.course_code})")
 
-            # Display the list of students enrolled in the selected course
-            enrolled_students = [student for student in students]  # All students
-            print("\nList of Enrolled Students:")
-            for i, student in enumerate(enrolled_students, 1):
-                print(f"{i}. {student.name} ({student.student_id})")
+                enrolled_students = students
+                print("\nList of Enrolled Students:")
+                for i, student in enumerate(enrolled_students, 1):
+                    print(f"{i}. {student.name} ({student.student_id})")
 
-            # Initialize attendance records for the selected course
-            present_students = set()
+                present_students = set()
 
-            # Mark attendance for each student
-            for student in enrolled_students:
-                attendance_status = input(f"Mark attendance for {student.name} (Present/Absent): ").lower()
-                if attendance_status == 'present':
-                    present_students.add(student)
+                for student in enrolled_students:
+                    while True:
+                        attendance_status = input(f"Mark attendance for {student.name} (Present/Absent): ").lower()
+                        if attendance_status in ['present', 'absent']:
+                            break
+                        else:
+                            print("Invalid input. Please enter 'Present' or 'Absent'.")
 
-            # Capture the date and time
-            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-            current_time = datetime.datetime.now().strftime("%H:%M:%S")
+                    if attendance_status == 'present':
+                        present_students.add(student)
 
-            # Update the global attendance list
-            for student in present_students:
-                attendance = Attendance(student, selected_course, current_date, current_time)
-                attendances.append(attendance)
+                current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                current_time = datetime.datetime.now().strftime("%H:%M:%S")
 
-        else:
-            print("Invalid course number.")
-    except ValueError:
-        print("Invalid input. Please enter a valid course number.")
+                for student in present_students:
+                    attendance = Attendance(student, selected_course, current_date, current_time)
+                    attendances.append(attendance)
+                
+                print("Attendance marked successfully.")
+                break  # Exit the loop once attendance is marked
+            else:
+                print("Invalid course number.")
+        except ValueError:
+            print("Invalid input. Please enter a valid course number.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    return attendances
 
 def manage_timetables(courses, timetables):
     while True:
