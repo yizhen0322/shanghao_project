@@ -1,0 +1,5 @@
+C001,Mathematics,Dr. Smith,Room 101,Mon 9:00 AM - 11:00 AM
+C002,Physics,Prof. Johnson,Room 102,Wed 1:00 PM - 3:00 PM
+C003,Chemistry,Dr. Williams,Room 103,Fri 10:00 AM - 12:00 PM
+C004,English,Dr. Brown,Room 104,Thu 9:00 AM - 11:00 AM
+C005,History,Prof. Davis,Room 105,Tue 10:00 AM - 12:00 PM

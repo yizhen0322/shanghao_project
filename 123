@@ -1,0 +1,344 @@
+import datetime
+
+class Student:
+    def __init__(self, student_id, name):
+        self.student_id = student_id
+        self.name = name
+
+class Course:
+    def __init__(self, course_code, course_name, instructor, room_number, time_slots):
+        self.course_code = course_code
+        self.course_name = course_name
+        self.instructor = instructor
+        self.room_number = room_number
+        self.time_slots = time_slots
+
+class Attendance:
+    def __init__(self, student, course, attendance_time):
+        self.student = student
+        self.course = course
+        self.attendance_time = attendance_time
+
+class Assignment:
+    def __init__(self, assignment_id, course, student, submission_status):
+        self.assignment_id = assignment_id
+        self.course = course
+        self.student = student
+        self.submission_status = submission_status
+
+class Timetable:
+    def __init__(self, course, timetable_info):
+        self.course = course
+        self.timetable_info = timetable_info
+
+class SubmissionStatus:
+    PENDING = "Pending"
+    SUBMITTED = "Submitted"
+    GRADED = "Graded"
+
+def read_initial_data():
+    students = []
+    courses = []
+    attendances = []  # Initialize attendances list
+    assignments = []
+    timetables = []
+
+    # Read from attendance file
+    with open("attendance_StudentID.txt", 'r') as file:
+        for line in file:
+            data = line.strip().split(",")
+            student_id, name = data[0], data[1]
+            students.append(Student(student_id, name))
+
+    # Read from timetables file
+    with open("timetables_StudentID.txt", 'r') as file:
+        for line in file:
+            data = line.strip().split(",")
+            course_code, course_name, instructor, room_number, time_slots = data[0], data[1], data[2], data[3], data[4]
+            course = Course(course_code, course_name, instructor, room_number, time_slots)
+            courses.append(course)
+            timetables.append(Timetable(course, line.strip()))
+
+    # Read from assignments file
+    with open("assignments_StudentID.txt", 'r') as file:
+        for line in file:
+            data = line.strip().split(",")
+            assignment_id, course_code, student_id, submission_status = data[0], data[1], data[2], data[3]
+            assignments.append(Assignment(assignment_id, course_code, student_id, submission_status))
+
+    return students, courses, attendances, assignments, timetables
+
+
+def write_updated_data(students, courses, attendances, assignments, timetables):
+    # Write updated attendance data to file
+    with open("attendance_StudentID.txt", "w") as attendance_file:
+        for record in attendances:
+            attendance_file.write(f"{record.student.student_id},{record.course.course_code},{record.attendance_time}\n")
+    
+    # Write updated timetable data to file
+    with open("timetables_StudentID.txt", "w") as timetable_file:
+        for record in timetables:
+            timetable_file.write(record.timetable_info + "\n")
+    
+    # Write updated assignment data to file
+    with open("assignments_StudentID.txt", "w") as assignment_file:
+        for record in assignments:
+            assignment_file.write(f"{record.assignment_id},{record.course.course_code},{record.student},{record.submission_status}\n")
+
+def mark_attendance(students, courses, attendances):
+    # Prompt the user to select a course
+    print("Available Courses:")
+    for i, course in enumerate(courses, 1):
+        print(f"{i}. {course.course_name} ({course.course_code})")
+
+    course_choice = input("Enter the course number to mark attendance: ")
+    try:
+        course_choice = int(course_choice)
+        if 1 <= course_choice <= len(courses):
+            selected_course = courses[course_choice - 1]
+            print(f"\nMarking attendance for course: {selected_course.course_name} ({selected_course.course_code})")
+
+            # Display the list of students enrolled in the selected course
+            enrolled_students = [student for student in students]  # All students
+            print("\nList of Enrolled Students:")
+            for i, student in enumerate(enrolled_students, 1):
+                print(f"{i}. {student.name} ({student.student_id})")
+
+            # Initialize attendance records for the selected course
+            present_students = set()
+
+            # Mark attendance for each student
+            for student in enrolled_students:
+                attendance_status = input(f"Mark attendance for {student.name} (Present/Absent): ").lower()
+                if attendance_status == 'present':
+                    present_students.add(student)
+
+            # Calculate and display attendance percentages
+            total_classes = 10  # Example: Total number of classes
+            attendance_percentage = (len(present_students) / len(enrolled_students)) * 100
+            print(f"\nAttendance Percentage for {selected_course.course_name}: {attendance_percentage:.2f}%")
+
+            # Update the global attendance list
+            for student in present_students:
+                attendance_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                attendance = Attendance(student, selected_course, attendance_time)
+                attendances.append(attendance)
+
+        else:
+            print("Invalid course number.")
+    except ValueError:
+        print("Invalid input. Please enter a valid course number.")
+
+def manage_timetables(courses, timetables):
+    while True:
+        print("\nTimetable Management Menu:")
+        print("1. Create Timetable")
+        print("2. Update Timetable")
+        print("3. Delete Timetable")
+        print("4. Display Timetables")
+        print("5. Back to Main Menu")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            create_timetable(courses, timetables)
+        elif choice == "2":
+            update_timetable(courses, timetables)
+        elif choice == "3":
+            delete_timetable(courses, timetables)
+        elif choice == "4":
+            display_timetables(courses, timetables)
+        elif choice == "5":
+            print("Returning to the main menu.")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+def create_timetable(courses, timetables):
+    # Prompt the user to enter timetable details
+    course_code = input("Enter the course code: ")
+    course_name = input("Enter the course name: ")
+    instructor = input("Enter the instructor's name: ")
+    room_number = input("Enter the room number: ")
+    time_slots = input("Enter the time slots (e.g., 'Mon 9:00 AM - 11:00 AM'): ")
+
+    # Create a new Course object with the provided details
+    new_course = Course(course_code, course_name, instructor, room_number, time_slots)
+
+    # Add the new course to the list of courses
+    courses.append(new_course)
+
+    # Add the new timetable entry to the list of timetables
+    timetables.append(Timetable(new_course, f"{course_code},{course_name},{instructor},{room_number},{time_slots}"))
+
+    print("Timetable created successfully.")
+
+def update_timetable(courses, timetables):
+    # Prompt the user to select a course to update its timetable
+    print("Available Courses:")
+    for i, course in enumerate(courses, 1):
+        print(f"{i}. {course.course_name} ({course.course_code})")
+
+    course_choice = input("Enter the course number to update timetable: ")
+    try:
+        course_choice = int(course_choice)
+        if 1 <= course_choice <= len(courses):
+            selected_course = courses[course_choice - 1]
+
+            # Prompt the user to enter updated timetable details
+            print(f"\nUpdating timetable for course: {selected_course.course_name} ({selected_course.course_code})")
+            room_number = input("Enter the new room number (leave blank to keep current): ")
+            time_slots = input("Enter the new time slots (leave blank to keep current): ")
+
+            # Update the course object with the new details
+            if room_number:
+                selected_course.room_number = room_number
+            if time_slots:
+                selected_course.time_slots = time_slots
+
+            # Update the corresponding timetable entry
+            for timetable in timetables:
+                if timetable.course.course_code == selected_course.course_code:
+                    timetable.timetable_info = f"{selected_course.course_code},{selected_course.course_name}," \
+                                               f"{selected_course.instructor},{selected_course.room_number}," \
+                                               f"{selected_course.time_slots}"
+            print("Timetable updated successfully.")
+        else:
+            print("Invalid course number.")
+    except ValueError:
+        print("Invalid input. Please enter a valid course number.")
+
+def delete_timetable(courses, timetables):
+    # Prompt the user to select a course to delete its timetable
+    print("Available Courses:")
+    for i, course in enumerate(courses, 1):
+        print(f"{i}. {course.course_name} ({course.course_code})")
+
+    course_choice = input("Enter the course number to delete timetable: ")
+    try:
+        course_choice = int(course_choice)
+        if 1 <= course_choice <= len(courses):
+            selected_course = courses[course_choice - 1]
+
+            # Remove the course from the list of courses
+            courses.remove(selected_course)
+
+            # Remove the corresponding timetable entry
+            for timetable in timetables:
+                if timetable.course.course_code == selected_course.course_code:
+                    timetables.remove(timetable)
+            print("Timetable deleted successfully.")
+        else:
+            print("Invalid course number.")
+    except ValueError:
+        print("Invalid input. Please enter a valid course number.")
+
+
+def display_timetables(courses, timetables):
+    # Display current timetables for all courses
+    print("\nCurrent Timetables:")
+    for course in courses:
+        print(f"\nCourse Code: {course.course_code}")
+        print(f"Course Name: {course.course_name}")
+        print(f"Instructor: {course.instructor}")
+        print(f"Room Number: {course.room_number}")
+        print(f"Time Slots: {course.time_slots}")
+
+def submit_assignment(student, course, assignments):
+    assignment_id = input("Enter assignment ID: ")
+    submission_status = SubmissionStatus.PENDING
+    new_assignment = Assignment(assignment_id, course, student.student_id, submission_status)
+    assignments.append(new_assignment)
+    print("Assignment submitted successfully.")
+
+def check_assignment_status(student, course, assignments):
+    print("Your Assignment Status:")
+    for assignment in assignments:
+        if assignment.student == student.student_id and assignment.course == course.course_code:
+            print(f"Assignment ID: {assignment.assignment_id}, Status: {assignment.submission_status}")
+            return
+    print("No assignments found for this course.")
+
+def update_assignment_status(faculty, assignment_id, new_status, assignments):
+    for assignment in assignments:
+        if assignment.assignment_id == assignment_id and assignment.course.instructor == faculty:
+            assignment.submission_status = new_status
+            print("Assignment status updated successfully.")
+            return
+    print("Assignment not found or you don't have permission to update its status.")
+
+def display_data(attendances, timetables, assignments, students, courses):
+    print("\nAttendance Records:")
+    for attendance in attendances:
+        print(f"Student: {attendance.student.name}, Course: {attendance.course.course_name}, Attendance Time: {attendance.attendance_time}")
+    
+    print("\nTimetables:")
+    for timetable in timetables:
+        print(f"Course: {timetable.course.course_name}, Timetable: {timetable.timetable_info}")
+    
+    print("\nAssignment Submission Status:")
+    for assignment in assignments:
+        student = next((s.name for s in students if s.student_id == assignment.student), None)
+        course_name = next((c.course_name for c in courses if c.course_code == assignment.course), None)
+        print(f"Assignment ID: {assignment.assignment_id}, Course: {course_name}, Student: {student}, Status: {assignment.submission_status}")
+
+
+def exit_program(students, courses, attendances, assignments, timetables):
+    write_updated_data(students, courses, attendances, assignments, timetables)
+    print("Exiting the program.")
+
+def main():
+    students, courses, attendances, assignments, timetables = read_initial_data()
+
+    while True:
+        print("\nClassroom Management System Menu:")
+        print("1. Mark Attendance")
+        print("2. Manage Timetables")
+        print("3. Submit/Check Assignments")
+        print("4. Display Data")
+        print("5. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            mark_attendance(students, courses, attendances)
+        elif choice == "2":
+            manage_timetables(courses, timetables)
+        elif choice == "3":
+            student_or_faculty = input("Are you a student or faculty? (S/F): ").upper()
+            if student_or_faculty == "S":
+                student_id = input("Enter your student ID: ")
+                student = next((student for student in students if student.student_id == student_id), None)
+                if student:
+                    course_choice = int(input("Enter the course number to submit/check assignments: "))
+                    if 1 <= course_choice <= len(courses):
+                        course = courses[course_choice - 1]
+                        submit_or_check = input("Do you want to submit or check assignments? (S/C): ").upper()
+                        if submit_or_check == "S":
+                            submit_assignment(student, course, assignments)
+                        elif submit_or_check == "C":
+                            check_assignment_status(student, course, assignments)
+                        else:
+                            print("Invalid choice.")
+                    else:
+                        print("Invalid course number.")
+                else:
+                    print("Student not found.")
+            elif student_or_faculty == "F":
+                faculty = input("Enter your name as faculty: ")
+                assignment_id = input("Enter the assignment ID you want to update: ")
+                new_status = input("Enter the new status (Pending/Submitted/Graded): ")
+                update_assignment_status(faculty, assignment_id, new_status, assignments)
+            else:
+                print("Invalid choice.")
+        elif choice == "4":
+            display_data(attendances, timetables, assignments, students, courses)  # Pass students and courses here
+        elif choice == "5":
+            exit_program(students, courses, attendances, assignments, timetables)
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+
+if __name__ == "__main__":
+    main()
